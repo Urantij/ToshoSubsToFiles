@@ -15,7 +15,56 @@ internal class Program
     private static void Main(string[] args)
     {
         Console.WriteLine("Hello, World!");
-        
+
+        if (args.Length == 2 && args[0] == "-a")
+        {
+            int counter = 0;
+            long saved = 0;
+
+            string path = args[1];
+
+            string attPath = Path.Combine(path, "attachments");
+
+            string[] targetDirs = Directory.GetDirectories(path);
+
+            Directory.CreateDirectory(attPath);
+
+            HashSet<string> cachedFileNames = [];
+
+            foreach (string dir in targetDirs)
+            {
+                string localAttPath = Path.Combine(dir, "attachments");
+
+                if (Directory.Exists(localAttPath))
+                {
+                    foreach (string filePath in Directory.GetFiles(localAttPath))
+                    {
+                        string fileName = Path.GetFileName(filePath);
+
+                        if (cachedFileNames.Add(fileName))
+                        {
+                            File.Move(filePath, Path.Combine(attPath, fileName));
+
+                            Console.WriteLine($"moved {fileName}");
+                            counter++;
+                        }
+                        else
+                        {
+                            saved += new FileInfo(filePath).Length;
+
+                            File.Delete(filePath);
+                            Console.WriteLine($"deleted {fileName}");
+                        }
+                    }
+
+                    Directory.Delete(localAttPath);
+                }
+            }
+
+            Console.WriteLine($"Всего мувнуто {counter} файлов, спасено {saved / 1024}KB");
+            return;
+        }
+
         if (args.Length == 0 || args.Contains("--help") || args.Contains("-h"))
         {
             Console.WriteLine("Первый аргумент - путь до папок с сабами");
@@ -37,7 +86,7 @@ internal class Program
         // 720 будет меняться, если 1 а не 01 юзается... 
         // можно просто забанить 720). а первая меняющаяся. тада норм.
         // если канеш 720 не будет перед названием серии... а. оно не будет меняться...
-        
+
         string toshoPath = args[0];
         string videopath = args[1];
 
@@ -50,7 +99,7 @@ internal class Program
                 .ToArray();
             vids = DigitilizePathes(videos)
                 .Where(p => p.Num != null)
-                .ToArray();   
+                .ToArray();
         }
 
         PathData[] toshos;
@@ -58,7 +107,7 @@ internal class Program
             string[] toshoTargets = Directory.GetDirectories(toshoPath);
             toshos = DigitilizePathes(toshoTargets)
                 .Where(p => p.Num != null)
-                .ToArray();    
+                .ToArray();
         }
 
         string? choice = null;
@@ -86,10 +135,10 @@ internal class Program
             else
             {
                 var options = filesWithPathes.Select(f => new
-                    {
-                        f,
-                        length = new FileInfo(f).Length
-                    })
+                {
+                    f,
+                    length = new FileInfo(f).Length
+                })
                     .OrderByDescending(a => a.length)
                     .ToArray();
 
